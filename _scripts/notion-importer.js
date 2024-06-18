@@ -135,7 +135,7 @@ title: "${title}"${fmtags}${fmcats}
     md = escapeCodeBlock(md);
     md = replaceTitleOutsideRawBlocks(md);
 
-    const ftitle = `${date}-${id}.md`;
+    const ftitle = `${date}-${title.replace(" ", "-")}.md`;
 
     let index = 0;
     let edited_md = md.replace(
