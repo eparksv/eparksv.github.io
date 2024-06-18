@@ -1,5 +1,7 @@
 name: "Build and Deploy"
 on:
+  repository_dispatch:
+    types: [ RUN_WORKFLOW_DISPATCH ]
   push:
     branches:
       - main
@@ -13,7 +15,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,7 +25,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  notion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Clean Directory
+        run: |
+          for file in assets/img/*
+          do
+              if [[ $file != "assets/img/favicons" ]]
+              then
+                  rm -rf "$file"
+              fi
+          done
+          rm -rf _posts/*
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - run: npm install
+      - run: node _scripts/notion-import.js
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: Import Notion Pages
+          branch: main
+          commit_user_name: notion-importer🤖
+          commit_user_email: epark.grace@gmail.com
+          commit_author: notion-importer🤖 <epark.grace@gmail.com>
   build:
+    needs: notion
     runs-on: ubuntu-latest
 
     steps:
